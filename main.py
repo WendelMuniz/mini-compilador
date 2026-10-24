@@ -3,7 +3,8 @@ Ponto de entrada do compilador.
 
 Uso:  python main.py arquivo.c
 
-Lê o arquivo C e executa as fases de análise, imprimindo os resultados.
+Lê o arquivo C e executa as três fases de análise:
+léxica, sintática e semântica, imprimindo os resultados.
 """
 
 import sys
@@ -13,6 +14,7 @@ import sys
 sys.path.insert(0, "src")
 
 from minicomp.lexico import analisar_lexico
+from minicomp.semantico import analisar_semantico
 from minicomp.sintatico import analisar_sintatico
 
 
@@ -44,9 +46,12 @@ def main():
         print(f"Não foi possível abrir o arquivo: {e}")
         sys.exit(1)
 
-    # ---- FASE 1: análise léxica ----
+    # ---- Executa as três fases (ainda sem imprimir nada) ----
     tokens, tabela, erros_lex = analisar_lexico(codigo)
+    ast, erros_sint = analisar_sintatico(tokens)
+    erros_sem = analisar_semantico(ast, tabela)   # também preenche os tipos
 
+    # ---- FASE 1: léxica ----
     titulo("ANÁLISE LÉXICA - LISTA DE TOKENS")
     print(f"{'Linha:Col':<10}{'Tipo':<20}Lexema")
     print("-" * 64)
@@ -63,13 +68,10 @@ def main():
         for e in erros_lex:
             print(e)
 
-    # ---- FASE 2: análise sintática ----
-    ast, erros_sint = analisar_sintatico(tokens)
-
+    # ---- FASE 2: sintática ----
     print()
     titulo("ANÁLISE SINTÁTICA - AST")
     if ast.filhos:
-        # Uma árvore para cada comando reconhecido
         for comando in ast.filhos:
             print(comando.exibir())
             print()
@@ -80,6 +82,15 @@ def main():
         titulo("ERROS SINTÁTICOS")
         for e in erros_sint:
             print(e)
+
+    # ---- FASE 3: semântica ----
+    print()
+    titulo("ANÁLISE SEMÂNTICA")
+    if erros_sem:
+        for e in erros_sem:
+            print(e)
+    else:
+        print("Nenhum erro semântico encontrado.")
 
 
 if __name__ == "__main__":
