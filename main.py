@@ -9,10 +9,11 @@ Lê o arquivo C e executa as fases de análise, imprimindo os resultados.
 import sys
 
 # main.py fica FORA da pasta src/, então avisamos ao Python onde achar o
-# pacote 'minicomp'. Esta linha precisa vir ANTES do import abaixo.
+# pacote 'minicomp'. Esta linha precisa vir ANTES dos imports abaixo.
 sys.path.insert(0, "src")
 
 from minicomp.lexico import analisar_lexico
+from minicomp.sintatico import analisar_sintatico
 
 
 def titulo(texto: str) -> None:
@@ -23,6 +24,12 @@ def titulo(texto: str) -> None:
 
 
 def main():
+    # Garante que os caracteres da árvore (├── └──) saiam corretos
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except (AttributeError, ValueError):
+        pass
+
     # Confere se o usuário passou o nome do arquivo
     if len(sys.argv) != 2:
         print("Uso: python main.py arquivo.c")
@@ -38,7 +45,7 @@ def main():
         sys.exit(1)
 
     # ---- FASE 1: análise léxica ----
-    tokens, tabela, erros = analisar_lexico(codigo)
+    tokens, tabela, erros_lex = analisar_lexico(codigo)
 
     titulo("ANÁLISE LÉXICA - LISTA DE TOKENS")
     print(f"{'Linha:Col':<10}{'Tipo':<20}Lexema")
@@ -50,13 +57,30 @@ def main():
     titulo("TABELA DE SÍMBOLOS")
     print(tabela.exibir())
 
-    if erros:
+    if erros_lex:
         print()
         titulo("ERROS LÉXICOS")
-        for e in erros:
+        for e in erros_lex:
+            print(e)
+
+    # ---- FASE 2: análise sintática ----
+    ast, erros_sint = analisar_sintatico(tokens)
+
+    print()
+    titulo("ANÁLISE SINTÁTICA - AST")
+    if ast.filhos:
+        # Uma árvore para cada comando reconhecido
+        for comando in ast.filhos:
+            print(comando.exibir())
+            print()
+    else:
+        print("(nenhum comando reconhecido)")
+
+    if erros_sint:
+        titulo("ERROS SINTÁTICOS")
+        for e in erros_sint:
             print(e)
 
 
 if __name__ == "__main__":
     main()
-    
